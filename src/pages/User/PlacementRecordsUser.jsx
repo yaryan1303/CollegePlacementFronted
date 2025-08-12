@@ -1,15 +1,18 @@
 import React, { useState, useEffect } from 'react';
-import { Table, Select, Input, Card, Space, Typography, Spin } from 'antd';
+import { Table, Select, Input, Card, Space, Typography, Spin, Tabs } from 'antd';
 import { SearchOutlined } from '@ant-design/icons';
 import { userAPI } from '../../services/api';
 
 const { Title } = Typography;
 const { Option } = Select;
+const { TabPane } = Tabs;
 
 const PlacementRecordsUser = () => {
-  const [records, setRecords] = useState([]);
+  const [allRecords, setAllRecords] = useState([]);
+  const [filteredRecords, setFilteredRecords] = useState([]);
   const [companies, setCompanies] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState('all');
   const [filters, setFilters] = useState({
     companyName: undefined,
     batchYear: undefined
@@ -17,18 +20,20 @@ const PlacementRecordsUser = () => {
 
   useEffect(() => {
     fetchCompanies();
+    fetchAllRecords();
   }, []);
 
   useEffect(() => {
-    fetchRecords();
-  }, [filters]);
+    if (activeTab === 'filtered') {
+      fetchFilteredRecords();
+    }
+  }, [filters, activeTab]);
 
   const fetchCompanies = async () => {
     try {
       setLoading(true);
       const response = await userAPI.getAllCompanies();
       setCompanies(response.data);
-      // console.log(response.data)
     } catch (error) {
       console.error('Error fetching companies:', error);
     } finally {
@@ -36,13 +41,29 @@ const PlacementRecordsUser = () => {
     }
   };
 
-  const fetchRecords = async () => {
+  const fetchAllRecords = async () => {
     try {
       setLoading(true);
-      const response = await userAPI.getPlacementRecordsUser(filters.batchYear, filters.companyName);
-      setRecords(response.data);
+      const response = await userAPI.getAllPlacementRecordsUser();
+      setAllRecords(response.data);
+      console.log(response.data);
     } catch (error) {
-      console.error('Error fetching records:', error);
+      console.error('Error fetching all records:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchFilteredRecords = async () => {
+    try {
+      setLoading(true);
+      const response = await userAPI.getPlacementRecordsUser(
+        filters.batchYear, 
+        filters.companyName
+      );
+      setFilteredRecords(response.data);
+    } catch (error) {
+      console.error('Error fetching filtered records:', error);
     } finally {
       setLoading(false);
     }
@@ -57,12 +78,21 @@ const PlacementRecordsUser = () => {
     setFilters({ ...filters, batchYear: value ? parseInt(value) : undefined });
   };
 
+  const handleTabChange = (key) => {
+    setActiveTab(key);
+  };
+
   const columns = [
     {
       title: 'Student Name',
       dataIndex: 'studentName',
       key: 'studentName',
       sorter: (a, b) => a.studentName.localeCompare(b.studentName),
+    },
+    {
+      title: 'Roll Number',
+      dataIndex: 'rollNumber',
+      key: 'rollNumber',
     },
     {
       title: 'Company',
@@ -74,15 +104,16 @@ const PlacementRecordsUser = () => {
       title: 'Position',
       dataIndex: 'position',
       key: 'position',
-      render: (positions) => positions.split(',').map(pos => (
-        <div key={pos} style={{ margin: '2px 0' }}>{pos.trim()}</div>
-      )),
     },
     {
       title: 'Package (LPA)',
       dataIndex: 'salaryPackage',
       key: 'salaryPackage',
-      sorter: (a, b) => parseFloat(a.salaryPackage) - parseFloat(b.salaryPackage),
+      sorter: (a, b) => {
+        const aValue = parseFloat(a.salaryPackage);
+        const bValue = parseFloat(b.salaryPackage);
+        return aValue - bValue;
+      },
     },
     {
       title: 'Placement Date',
@@ -104,51 +135,72 @@ const PlacementRecordsUser = () => {
       <Card>
         <Title level={3} style={{ marginBottom: '24px' }}>Placement Records</Title>
         
-        <Space size="large" style={{ marginBottom: '24px', width: '100%' }}>
-          <div style={{ width: '300px' }}>
-            <Select
-              showSearch
-              style={{ width: '100%' }}
-              placeholder="Select a company"
-              optionFilterProp="children"
-              onChange={handleCompanyChange}
-              filterOption={(input, option) =>
-                option.children.toLowerCase().indexOf(input.toLowerCase()) >= 0
-              }
-              allowClear
-            >
-              {companies.map(company => (
-                <Option key={company.companyId} value={company.name}>
-                  {company.name}
-                </Option>
-              ))}
-            </Select>
-          </div>
+        <Tabs defaultActiveKey="all" onChange={handleTabChange}>
+          <TabPane tab="All Placements" key="all">
+            <Spin spinning={loading}>
+              <Table
+                columns={columns}
+                dataSource={allRecords}
+                rowKey="recordId"
+                bordered
+                size="middle"
+                pagination={{
+                  pageSize: 10,
+                  showSizeChanger: true,
+                  pageSizeOptions: ['10', '20', '50', '100'],
+                }}
+              />
+            </Spin>
+          </TabPane>
           
-          <Input
-            placeholder="Filter by batch year"
-            prefix={<SearchOutlined />}
-            onChange={handleYearChange}
-            style={{ width: '200px' }}
-            type="number"
-            allowClear
-          />
-        </Space>
+          <TabPane tab="Filter Placements" key="filtered">
+            <Space size="large" style={{ marginBottom: '24px', width: '100%' }}>
+              <div style={{ width: '300px' }}>
+                <Select
+                  showSearch
+                  style={{ width: '100%' }}
+                  placeholder="Select a company"
+                  optionFilterProp="children"
+                  onChange={handleCompanyChange}
+                  filterOption={(input, option) =>
+                    option.children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                  }
+                  allowClear
+                >
+                  {companies.map(company => (
+                    <Option key={company.companyId} value={company.name}>
+                      {company.name}
+                    </Option>
+                  ))}
+                </Select>
+              </div>
+              
+              <Input
+                placeholder="Filter by batch year"
+                prefix={<SearchOutlined />}
+                onChange={handleYearChange}
+                style={{ width: '200px' }}
+                type="number"
+                allowClear
+              />
+            </Space>
 
-        <Spin spinning={loading}>
-          <Table
-            columns={columns}
-            dataSource={records}
-            rowKey="recordId"
-            bordered
-            size="middle"
-            pagination={{
-              pageSize: 10,
-              showSizeChanger: true,
-              pageSizeOptions: ['10', '20', '50', '100'],
-            }}
-          />
-        </Spin>
+            <Spin spinning={loading}>
+              <Table
+                columns={columns}
+                dataSource={filteredRecords}
+                rowKey="recordId"
+                bordered
+                size="middle"
+                pagination={{
+                  pageSize: 10,
+                  showSizeChanger: true,
+                  pageSizeOptions: ['10', '20', '50', '100'],
+                }}
+              />
+            </Spin>
+          </TabPane>
+        </Tabs>
       </Card>
     </div>
   );

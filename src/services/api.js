@@ -2,8 +2,6 @@ import axios from "axios";
 
 const API_BASE_URL = `${import.meta.env.VITE_API_URL}/api`;
 
-
-
 // Create axios instance
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -46,7 +44,9 @@ api.interceptors.response.use(
       return Promise.reject(new Error(backendMessage));
     } else if (error.request) {
       // No response from server
-      return Promise.reject(new Error("No response from server. Please try again."));
+      return Promise.reject(
+        new Error("No response from server. Please try again.")
+      );
     } else {
       // Request setup error
       return Promise.reject(new Error(error.message || "Request error"));
@@ -115,6 +115,13 @@ export const adminAPI = {
         ...(companyName && { companyName }),
       },
     }),
+  getPlacementRecordsAdmin: (batchYear, companyName) => {
+    const params = new URLSearchParams();
+    if (batchYear) params.append("batchYear", batchYear);
+    if (companyName) params.append("companyName", companyName);
+    return api.get(`/admin/records?${params.toString()}`);
+  },
+  getAllPlacementRecordsAdmin: () => api.get("/admin/placementsRecords"),
 
   // Departments
   createDepartment: (departmentData) =>
@@ -123,7 +130,7 @@ export const adminAPI = {
     api.put(`/admin/departments/${id}`, departmentData),
   getAllDepartments: () => api.get("/admin/departments"),
   getBranchYearWisePlacements: () => api.get("/admin/branch-year-wise"),
-  getYearWisePlacementCount:()=>api.get("/admin/count-by-batch-year"),
+  getYearWisePlacementCount: () => api.get("/admin/count-by-batch-year"),
 };
 
 /* ---------------- USER API ---------------- */
