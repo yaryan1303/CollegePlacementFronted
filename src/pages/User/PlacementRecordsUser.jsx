@@ -175,14 +175,7 @@ const PlacementRecordsUser = () => {
                 </Select>
               </div>
               
-              <Input
-                placeholder="Filter by batch year"
-                prefix={<SearchOutlined />}
-                onChange={handleYearChange}
-                style={{ width: '200px' }}
-                type="number"
-                allowClear
-              />
+             
             </Space>
 
             <Spin spinning={loading}>
