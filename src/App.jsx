@@ -31,6 +31,9 @@ import ApplicationsList from './pages/User/ApplicationsList';
 import PlacementRecordsUser from './pages/User/PlacementRecordsUser';
 import ForgotPassword from './pages/Auth/ForgotPassword';
 import ResetPassword from './pages/Auth/ResetPassword';
+import OpportunityApplication from './pages/User/OpportunityApplication';
+import ResumeGenerator from './ResumeGenerator';
+
 
 
 function App() {
@@ -46,6 +49,10 @@ function App() {
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/api/auth/public/reset-password" element={<ResetPassword />} />
             {/* <Route path="/reset-password" element={<ResetPassword />} /> */}
+
+             <Route path="/resumesanalysis" element={<OpportunityApplication/>} />
+
+            
            
             
             {/* Admin Routes */}
@@ -163,6 +170,12 @@ function App() {
             <Route path="/placements" element={
               <ProtectedRoute>
                 <PlacementRecordsUser />
+              </ProtectedRoute>
+            } />
+
+            <Route path="/resume-builder" element={
+              <ProtectedRoute>
+                <ResumeGenerator />
               </ProtectedRoute>
             } />
             

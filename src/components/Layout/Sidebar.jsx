@@ -28,6 +28,7 @@ const Sidebar = () => {
     { name: 'Reports', href: '/admin/reports', icon: BarChartIcon },
     { name: 'PlacementRecord', href: '/admin/placementrecords', icon: UsersIcon },
     { name: 'Departments', href: '/admin/departments', icon: SettingsIcon },
+    
   ];
 
   const userMenuItems = [
@@ -36,6 +37,8 @@ const Sidebar = () => {
     { name: 'Job Opportunities', href: '/opportunities', icon: BriefcaseIcon },
     { name: 'My Applications', href: '/applications', icon: ClipboardListIcon },
     { name: 'Placement Records', href: '/placements', icon: TrophyIcon },
+    { name: 'ResumeAnalysis', href: '/resumesanalysis', icon: SettingsIcon },
+    { name: 'ResumeBuilder', href: '/resume-builder', icon: SettingsIcon },
   ];
 
   const menuItems = isAdmin ? adminMenuItems : userMenuItems;

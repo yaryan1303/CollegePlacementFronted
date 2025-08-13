@@ -278,7 +278,7 @@ const Profile = () => {
                       value={formData.departmentId}
                       onChange={handleChange}
                     >
-                      <option value="">Select Department</option>
+                      <option value={formData.departmentId}>Select Department</option>
                       {departments.map(dept => (
                         <option key={dept.id} value={dept.id}>{dept.name}</option>
                       ))}

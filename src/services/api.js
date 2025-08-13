@@ -61,6 +61,17 @@ export const authAPI = {
   forgotPassword: (email) =>
     api.post("/auth/public/forgot-password", { email }),
   resetPassword: (data) => api.post("/auth/public/reset-password", data),
+
+  resumeAnalysis: (file) => {
+    const formData = new FormData();
+    formData.append("file", file);
+
+    return api.post("/resume/analyze", formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
+  },
 };
 
 /* ---------------- ADMIN API ---------------- */
@@ -149,6 +160,7 @@ export const userAPI = {
   // Applications
   applyForOpportunity: (applicationData) =>
     api.post("/users/applications", applicationData),
+
   getAllApplications: () => api.get("/users/applications"),
 
   // Placement Records
@@ -162,6 +174,10 @@ export const userAPI = {
 
   // Departments
   getAllDepartments: () => api.get("/users/departments"),
+
+  generateResume: (userDescription) => {
+    return api.post("/users/generate", { userDescription });
+  },
 };
 
 export default api;
