@@ -28,9 +28,9 @@ const Navbar = () => {
 
   const navLinks = [
     { to: isAdmin ? '/admin' : '/dashboard', icon: <Home className="h-5 w-5" />, text: 'Home' },
-    { to: '/jobs', icon: <Briefcase className="h-5 w-5" />, text: 'Jobs' },
-    { to: '/companies', icon: <Users className="h-5 w-5" />, text: 'Companies' },
-    { to: '/applications', icon: <FileText className="h-5 w-5" />, text: 'Applications' },
+    // { to: '/admin/visits', icon: <Briefcase className="h-5 w-5" />, text: 'Jobs' },
+    // { to: '/companies', icon: <Users className="h-5 w-5" />, text: 'Companies' },
+    // { to: '/applications', icon: <FileText className="h-5 w-5" />, text: 'Applications' },
   ];
 
   return (

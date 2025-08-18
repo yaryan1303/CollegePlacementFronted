@@ -31,6 +31,7 @@ const Profile = () => {
   const [loading, setLoading] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [profileExists, setProfileExists] = useState(false); // NEW state to track existence
+  const [error, setError] = useState("");
 
   useEffect(() => {
     if (user?.userId) {
@@ -72,7 +73,7 @@ const Profile = () => {
         setProfileExists(false);
       }
     } catch (error) {
-      console.error('Error fetching student data:', error);
+      setError(error.message || "Login failed. Please try again.");
       setProfileExists(false); // No profile found
     }
   };
@@ -123,6 +124,7 @@ const Profile = () => {
       
       await fetchStudentData();
     } catch (error) {
+      setError(error.message || "Login failed. Please try again.");
       console.error('Error saving profile:', error);
       toast.error(
         error.response?.data?.message || 
