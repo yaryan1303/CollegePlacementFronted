@@ -1,32 +1,32 @@
-import React, { useState, useEffect } from 'react';
-import { userAPI } from '../../services/api';
-import { useAuth } from '../../context/AuthContext';
-import { 
-  UserIcon, 
-  SaveIcon, 
+import React, { useState, useEffect } from "react";
+import { userAPI } from "../../services/api";
+import { useAuth } from "../../context/AuthContext";
+import {
+  UserIcon,
+  SaveIcon,
   GraduationCap,
   PhoneIcon,
   FileTextIcon,
   ChevronDownIcon,
   CalendarIcon,
   BookOpenIcon,
-  AwardIcon
-} from 'lucide-react';
-import { toast } from 'react-toastify';
+  AwardIcon,
+} from "lucide-react";
+import { toast } from "react-toastify";
 
 const Profile = () => {
   const { user } = useAuth();
   const [departments, setDepartments] = useState([]);
   const [formData, setFormData] = useState({
-    firstName: '',
-    lastName: '',
-    rollNumber: '',
-    batchYear: '',
-    departmentId: '',
-    cgpa: '',
-    resumeUrl: '',
-    phoneNumber: '',
-    currentStatus: 'NOT_PLACED'
+    firstName: "",
+    lastName: "",
+    rollNumber: "",
+    batchYear: "",
+    departmentId: "",
+    cgpa: "",
+    resumeUrl: "",
+    phoneNumber: "",
+    currentStatus: "NOT_PLACED",
   });
   const [loading, setLoading] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
@@ -43,12 +43,11 @@ const Profile = () => {
   const fetchDepartments = async () => {
     try {
       const response = await userAPI.getAllDepartments();
-      console.log('Departments:', response.data);
+      console.log("Departments:", response.data);
       setDepartments(response.data);
-      
     } catch (error) {
-      console.error('Error fetching departments:', error);
-      toast.error('Failed to load departments');
+      console.error("Error fetching departments:", error);
+      toast.error("Failed to load departments");
     }
   };
 
@@ -57,15 +56,15 @@ const Profile = () => {
       const response = await userAPI.getStudentDetails(user.userId);
       if (response.data) {
         setFormData({
-          firstName: response.data.firstName || '',
-          lastName: response.data.lastName || '',
-          rollNumber: response.data.rollNumber || '',
-          batchYear: response.data.batchYear?.toString() || '',
-          departmentId: response.data.departmentId?.toString() || '',
-          cgpa: response.data.cgpa?.toString() || '',
-          resumeUrl: response.data.resumeUrl || '',
-          phoneNumber: response.data.phoneNumber || '',
-          currentStatus: response.data.currentStatus || 'NOT_PLACED'
+          firstName: response.data.firstName || "",
+          lastName: response.data.lastName || "",
+          rollNumber: response.data.rollNumber || "",
+          batchYear: response.data.batchYear?.toString() || "",
+          departmentId: response.data.departmentId?.toString() || "",
+          cgpa: response.data.cgpa?.toString() || "",
+          resumeUrl: response.data.resumeUrl || "",
+          phoneNumber: response.data.phoneNumber || "",
+          currentStatus: response.data.currentStatus || "NOT_PLACED",
         });
         setProfileExists(true); // Mark that profile exists
         setIsEditing(false);
@@ -80,9 +79,9 @@ const Profile = () => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }));
   };
 
@@ -93,9 +92,58 @@ const Profile = () => {
     }
   };
 
+  // const handleSubmit = async (e) => {
+  //   e.preventDefault();
+  //   setLoading(true);
+
+  //   try {
+  //     const dataToSubmit = {
+  //       firstName: formData.firstName,
+  //       lastName: formData.lastName,
+  //       rollNumber: formData.rollNumber,
+  //       batchYear: parseInt(formData.batchYear),
+  //       departmentId: parseInt(formData.departmentId),
+  //       cgpa: parseFloat(formData.cgpa),
+  //       resumeUrl: formData.resumeUrl,
+  //       phoneNumber: formData.phoneNumber,
+  //       currentStatus: formData.currentStatus
+  //     };
+
+  //     if (profileExists) {
+  //       // Update existing profile
+  //       await userAPI.updateStudentDetails(user.userId, dataToSubmit);
+  //       toast.success('Profile updated successfully!');
+  //     } else {
+  //       // Create new profile
+  //       console.log('Creating new profile:', dataToSubmit);
+  //       await userAPI.saveStudentDetails(dataToSubmit);
+  //       toast.success('Profile saved successfully!');
+  //       setProfileExists(true);
+  //     }
+
+  //     await fetchStudentData();
+  //   } catch (error) {
+  //     const errorMessage =
+  //       error.message ||
+  //       error.response?.data?.message ||
+  //       error.response?.data?.error ||
+  //       "Not able to update details...Please try again";
+  //     setError(errorMessage);
+  //     console.error('Error saving profile:', error);
+  //     toast.error(
+  //       error.response?.data?.message ||
+  //       error.response?.data?.error ||
+  //       'Failed to save profile'
+  //     );
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
+    setError(""); // Clear previous errors
 
     try {
       const dataToSubmit = {
@@ -107,30 +155,34 @@ const Profile = () => {
         cgpa: parseFloat(formData.cgpa),
         resumeUrl: formData.resumeUrl,
         phoneNumber: formData.phoneNumber,
-        currentStatus: formData.currentStatus
+        currentStatus: formData.currentStatus,
       };
 
       if (profileExists) {
         // Update existing profile
         await userAPI.updateStudentDetails(user.userId, dataToSubmit);
-        toast.success('Profile updated successfully!');
+        toast.success("Profile updated successfully!");
       } else {
         // Create new profile
-        console.log('Creating new profile:', dataToSubmit);
         await userAPI.saveStudentDetails(dataToSubmit);
-        toast.success('Profile saved successfully!');
+        toast.success("Profile saved successfully!");
         setProfileExists(true);
       }
-      
+
       await fetchStudentData();
+      setIsEditing(false); // Exit edit mode after successful save
     } catch (error) {
-      setError(error.message || "Login failed. Please try again.");
-      console.error('Error saving profile:', error);
-      toast.error(
-        error.response?.data?.message || 
-        error.response?.data?.error || 
-        'Failed to save profile'
-      );
+      // console.error("Error saving profile:", error);
+
+      // Extract error message from different possible locations
+      const errorMessage =
+        error.message || // Direct error message (e.g., "Roll Number already exists")
+        error.response?.data?.message ||
+        error.response?.data?.error ||
+        "Failed to save profile. Please try again.";
+
+      setError(errorMessage);
+      toast.error(errorMessage); // Show error in toast
     } finally {
       setLoading(false);
     }
@@ -145,9 +197,13 @@ const Profile = () => {
               <UserIcon className="h-8 w-8" />
             </div>
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">Student Profile</h1>
+              <h1 className="text-3xl font-bold text-gray-900">
+                Student Profile
+              </h1>
               <p className="text-gray-600">
-                {isEditing ? 'Edit your information' : 'View your profile details'}
+                {isEditing
+                  ? "Edit your information"
+                  : "View your profile details"}
               </p>
             </div>
           </div>
@@ -155,20 +211,27 @@ const Profile = () => {
             onClick={handleEditToggle}
             className="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300"
           >
-            {isEditing ? 'Cancel' : 'Edit Profile'}
+            {isEditing ? "Cancel" : "Edit Profile"}
           </button>
         </div>
 
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
           <form onSubmit={handleSubmit} className="p-6 space-y-8">
+            {error && (
+              <div className="bg-red-50 border-l-4 border-red-500 text-red-700 p-4 rounded-lg">
+                <p>{error}</p>
+              </div>
+            )}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-6">
                 <h2 className="text-lg font-semibold text-gray-900 border-b border-gray-200 pb-2">
                   Personal Information
                 </h2>
-                
+
                 <div className="relative">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">First Name *</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    First Name *
+                  </label>
                   <div className="relative">
                     <UserIcon className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
                     <input
@@ -177,7 +240,9 @@ const Profile = () => {
                       required
                       disabled={!isEditing}
                       className={`w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 ${
-                        isEditing ? 'border-gray-300' : 'border-transparent bg-gray-50'
+                        isEditing
+                          ? "border-gray-300"
+                          : "border-transparent bg-gray-50"
                       }`}
                       value={formData.firstName}
                       onChange={handleChange}
@@ -186,7 +251,9 @@ const Profile = () => {
                 </div>
 
                 <div className="relative">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Last Name *</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Last Name *
+                  </label>
                   <div className="relative">
                     <UserIcon className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
                     <input
@@ -195,7 +262,9 @@ const Profile = () => {
                       required
                       disabled={!isEditing}
                       className={`w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 ${
-                        isEditing ? 'border-gray-300' : 'border-transparent bg-gray-50'
+                        isEditing
+                          ? "border-gray-300"
+                          : "border-transparent bg-gray-50"
                       }`}
                       value={formData.lastName}
                       onChange={handleChange}
@@ -204,7 +273,9 @@ const Profile = () => {
                 </div>
 
                 <div className="relative">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number *</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Phone Number *
+                  </label>
                   <div className="relative">
                     <PhoneIcon className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
                     <input
@@ -214,7 +285,9 @@ const Profile = () => {
                       pattern="[0-9]{10}"
                       disabled={!isEditing}
                       className={`w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 ${
-                        isEditing ? 'border-gray-300' : 'border-transparent bg-gray-50'
+                        isEditing
+                          ? "border-gray-300"
+                          : "border-transparent bg-gray-50"
                       }`}
                       value={formData.phoneNumber}
                       onChange={handleChange}
@@ -227,9 +300,11 @@ const Profile = () => {
                 <h2 className="text-lg font-semibold text-gray-900 border-b border-gray-200 pb-2">
                   Academic Information
                 </h2>
-                
+
                 <div className="relative">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Roll Number *</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Roll Number *
+                  </label>
                   <div className="relative">
                     <GraduationCap className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
                     <input
@@ -238,7 +313,9 @@ const Profile = () => {
                       required
                       disabled={!isEditing}
                       className={`w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 ${
-                        isEditing ? 'border-gray-300' : 'border-transparent bg-gray-50'
+                        isEditing
+                          ? "border-gray-300"
+                          : "border-transparent bg-gray-50"
                       }`}
                       value={formData.rollNumber}
                       onChange={handleChange}
@@ -247,7 +324,9 @@ const Profile = () => {
                 </div>
 
                 <div className="relative">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Batch Year *</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Batch Year *
+                  </label>
                   <div className="relative">
                     <CalendarIcon className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
                     <input
@@ -258,7 +337,9 @@ const Profile = () => {
                       max="2100"
                       disabled={!isEditing}
                       className={`w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 ${
-                        isEditing ? 'border-gray-300' : 'border-transparent bg-gray-50'
+                        isEditing
+                          ? "border-gray-300"
+                          : "border-transparent bg-gray-50"
                       }`}
                       value={formData.batchYear}
                       onChange={handleChange}
@@ -267,7 +348,9 @@ const Profile = () => {
                 </div>
 
                 <div className="relative">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Department *</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Department *
+                  </label>
                   <div className="relative">
                     <BookOpenIcon className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
                     <select
@@ -275,14 +358,20 @@ const Profile = () => {
                       required
                       disabled={!isEditing}
                       className={`w-full pl-10 pr-4 py-2 border rounded-lg appearance-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 ${
-                        isEditing ? 'border-gray-300' : 'border-transparent bg-gray-50'
+                        isEditing
+                          ? "border-gray-300"
+                          : "border-transparent bg-gray-50"
                       }`}
                       value={formData.departmentId}
                       onChange={handleChange}
                     >
-                      <option value={formData.departmentId}>Select Department</option>
-                      {departments.map(dept => (
-                        <option key={dept.id} value={dept.id}>{dept.name}</option>
+                      <option value={formData.departmentId}>
+                        Select Department
+                      </option>
+                      {departments.map((dept) => (
+                        <option key={dept.id} value={dept.id}>
+                          {dept.name}
+                        </option>
                       ))}
                     </select>
                     <ChevronDownIcon className="absolute right-3 top-3 h-5 w-5 text-gray-400 pointer-events-none" />
@@ -290,7 +379,9 @@ const Profile = () => {
                 </div>
 
                 <div className="relative">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">CGPA *</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    CGPA *
+                  </label>
                   <div className="relative">
                     <AwardIcon className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
                     <input
@@ -302,7 +393,9 @@ const Profile = () => {
                       required
                       disabled={!isEditing}
                       className={`w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 ${
-                        isEditing ? 'border-gray-300' : 'border-transparent bg-gray-50'
+                        isEditing
+                          ? "border-gray-300"
+                          : "border-transparent bg-gray-50"
                       }`}
                       value={formData.cgpa}
                       onChange={handleChange}
@@ -316,15 +409,19 @@ const Profile = () => {
               <h2 className="text-lg font-semibold text-gray-900 border-b border-gray-200 pb-2">
                 Placement Information
               </h2>
-              
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="relative">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Current Status</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Current Status
+                  </label>
                   <select
                     name="currentStatus"
                     disabled={!isEditing}
                     className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 ${
-                      isEditing ? 'border-gray-300' : 'border-transparent bg-gray-50'
+                      isEditing
+                        ? "border-gray-300"
+                        : "border-transparent bg-gray-50"
                     }`}
                     value={formData.currentStatus}
                     onChange={handleChange}
@@ -334,7 +431,9 @@ const Profile = () => {
                 </div>
 
                 <div className="relative">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Resume URL</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Resume URL
+                  </label>
                   <div className="relative">
                     <FileTextIcon className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
                     <input
@@ -342,7 +441,9 @@ const Profile = () => {
                       name="resumeUrl"
                       disabled={!isEditing}
                       className={`w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 ${
-                        isEditing ? 'border-gray-300' : 'border-transparent bg-gray-50'
+                        isEditing
+                          ? "border-gray-300"
+                          : "border-transparent bg-gray-50"
                       }`}
                       placeholder="https://drive.google.com/..."
                       value={formData.resumeUrl}
@@ -350,7 +451,8 @@ const Profile = () => {
                     />
                   </div>
                   <p className="mt-1 text-xs text-gray-500">
-                    Upload your resume to Google Drive or similar service and paste the public link here.
+                    Upload your resume to Google Drive or similar service and
+                    paste the public link here.
                   </p>
                 </div>
               </div>
@@ -364,7 +466,7 @@ const Profile = () => {
                   className="flex items-center px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50"
                 >
                   <SaveIcon className="h-5 w-5 mr-2" />
-                  {loading ? 'Saving...' : 'Save Changes'}
+                  {loading ? "Saving..." : "Save Changes"}
                 </button>
               </div>
             )}
