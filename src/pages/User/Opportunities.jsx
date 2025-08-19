@@ -11,30 +11,91 @@ import {
   ArrowRightIcon,
   AwardIcon,
   UsersIcon,
-  FunnelIcon
+  FunnelIcon,
+  CheckCircleIcon,
+  XCircleIcon,
+  AlertCircleIcon
 } from 'lucide-react';
 import { toast } from 'react-toastify';
 
 const Opportunities = () => {
   const [opportunities, setOpportunities] = useState([]);
+  const [appliedOpportunities, setAppliedOpportunities] = useState(new Set());
+  const [applicationErrors, setApplicationErrors] = useState({});
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [batchFilter, setBatchFilter] = useState('');
+  const [error, setError] = useState("");
 
   useEffect(() => {
     fetchOpportunities();
+    fetchAppliedOpportunities();
   }, []);
 
   const fetchOpportunities = async () => {
+    setError("");
     try {
       setLoading(true);
       const response = await userAPI.getActiveVisits();
       setOpportunities(response.data);
     } catch (error) {
+      const errorMessage =
+        error.message ||
+        error.response?.data?.message ||
+        error.response?.data?.error ||
+        "Failed to fetch opportunities. Please try again.";
+      setError(errorMessage);
       console.error('Error fetching opportunities:', error);
       toast.error('Failed to load opportunities');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchAppliedOpportunities = async () => {
+    try {
+      // This would typically come from your API
+      const response = await userAPI.getAppliedOpportunities();
+      const appliedIds = response.data.map(app => app.visitId);
+      setAppliedOpportunities(new Set(appliedIds));
+      
+      // For demo purposes, let's simulate some applied opportunities
+      // In a real app, remove this and use the API response above
+      const simulatedApplied = new Set(['1', '3']); // Simulating visits 1 and 3 as applied
+      setAppliedOpportunities(simulatedApplied);
+    } catch (error) {
+      console.error('Error fetching applied opportunities:', error);
+    }
+  };
+
+  const handleApply = async (visitId) => {
+    try {
+      // Clear any previous error for this opportunity
+      setApplicationErrors(prev => {
+        const newErrors = {...prev};
+        delete newErrors[visitId];
+        return newErrors;
+      });
+      
+      // Call API to apply for this opportunity
+      await userAPI.applyForOpportunity(visitId);
+      
+      // Update UI to show application was successful
+      setAppliedOpportunities(prev => new Set([...prev, visitId]));
+      toast.success('Application submitted successfully!');
+    } catch (error) {
+      console.error('Error applying for opportunity:', error);
+      
+      // Extract error message
+      const errorMessage = error.response?.data?.message || error.message || "Failed to submit application";
+      
+      // Set error specifically for this opportunity
+      setApplicationErrors(prev => ({
+        ...prev,
+        [visitId]: errorMessage
+      }));
+      
+      toast.error('Failed to submit application');
     }
   };
 
@@ -72,6 +133,13 @@ const Opportunities = () => {
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-blue-50 p-6">
       <div className="max-w-7xl mx-auto space-y-8">
+        {/* Show error message if it exists */}
+        {error && (
+          <div className="bg-red-50 border-l-4 border-red-500 text-red-700 p-4 rounded-lg">
+            <p>{error}</p>
+          </div>
+        )}
+
         {/* Header */}
         <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
           <div>
@@ -82,7 +150,10 @@ const Opportunities = () => {
           </div>
           <div className="flex items-center space-x-3">
             <button 
-              onClick={fetchOpportunities}
+              onClick={() => {
+                fetchOpportunities();
+                fetchAppliedOpportunities();
+              }}
               className="flex items-center px-4 py-2 bg-white text-gray-700 rounded-lg border border-gray-300 hover:bg-gray-50"
             >
               <ArrowRightIcon className="h-5 w-5 mr-2 rotate-90" />
@@ -143,6 +214,8 @@ const Opportunities = () => {
             {filteredOpportunities.map((opportunity) => {
               const daysLeft = getDaysUntilDeadline(opportunity.applicationDeadline);
               const isExpired = isDeadlinePassed(opportunity.applicationDeadline);
+              const hasApplied = appliedOpportunities.has(opportunity.visitId);
+              const applicationError = applicationErrors[opportunity.visitId];
               
               return (
                 <div 
@@ -176,16 +249,25 @@ const Opportunities = () => {
                         </div>
                       </div>
                       
-                      <div className={`px-2.5 py-1 rounded-full text-xs font-medium ${
-                        isExpired 
-                          ? 'bg-gray-100 text-gray-800' 
-                          : daysLeft <= 3 
-                            ? 'bg-red-100 text-red-800' 
-                            : daysLeft <= 7 
-                              ? 'bg-amber-100 text-amber-800'
-                              : 'bg-emerald-100 text-emerald-800'
-                      }`}>
-                        {isExpired ? 'Closed' : daysLeft > 0 ? `${daysLeft} days left` : 'Last day!'}
+                      <div className="flex flex-col items-end">
+                        <div className={`px-2.5 py-1 rounded-full text-xs font-medium ${
+                          isExpired 
+                            ? 'bg-gray-100 text-gray-800' 
+                            : daysLeft <= 3 
+                              ? 'bg-red-100 text-red-800' 
+                              : daysLeft <= 7 
+                                ? 'bg-amber-100 text-amber-800'
+                                : 'bg-emerald-100 text-emerald-800'
+                        }`}>
+                          {isExpired ? 'Closed' : daysLeft > 0 ? `${daysLeft} days left` : 'Last day!'}
+                        </div>
+                        
+                        {hasApplied && (
+                          <div className="mt-2 flex items-center text-green-600">
+                            <CheckCircleIcon className="h-4 w-4 mr-1" />
+                            <span className="text-xs font-medium">Applied</span>
+                          </div>
+                        )}
                       </div>
                     </div>
 
@@ -252,20 +334,41 @@ const Opportunities = () => {
                       </div>
                     </div>
 
+                    {/* Application Error */}
+                    {applicationError && (
+                      <div className="mb-4 bg-red-50 border-l-4 border-red-500 text-red-700 p-4 rounded-lg flex items-start">
+                        <AlertCircleIcon className="h-5 w-5 text-red-500 mr-2 flex-shrink-0 mt-0.5" />
+                        <p className="text-sm">{applicationError}</p>
+                      </div>
+                    )}
+
                     {/* Action Button */}
                     <div className="flex justify-end">
-                      <Link
-                        to={`/opportunities/${opportunity.visitId}`}
-                        className={`inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white ${
-                          isExpired 
-                            ? 'bg-gray-400 cursor-not-allowed' 
-                            : 'bg-indigo-600 hover:bg-indigo-700'
-                        }`}
-                        onClick={isExpired ? (e) => e.preventDefault() : undefined}
-                      >
-                        {isExpired ? 'Application Closed' : 'View Details & Apply'}
-                        <ArrowRightIcon className="ml-2 h-4 w-4" />
-                      </Link>
+                      {hasApplied ? (
+                        <button
+                          disabled
+                          className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 cursor-not-allowed"
+                        >
+                          <CheckCircleIcon className="mr-2 h-4 w-4" />
+                          Applied Successfully
+                        </button>
+                      ) : isExpired ? (
+                        <button
+                          disabled
+                          className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-gray-400 cursor-not-allowed"
+                        >
+                          <XCircleIcon className="mr-2 h-4 w-4" />
+                          Application Closed
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => handleApply(opportunity.visitId)}
+                          className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700"
+                        >
+                          Apply Now
+                          <ArrowRightIcon className="ml-2 h-4 w-4" />
+                        </button>
+                      )}
                     </div>
                   </div>
                 </div>
