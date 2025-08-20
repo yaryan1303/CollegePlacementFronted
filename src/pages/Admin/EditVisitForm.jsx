@@ -62,14 +62,23 @@ const EditVisitForm = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await adminAPI.updateVisit(visitId, {
-        ...formData,
+      // Transform data to match backend expectations
+      const payload = {
+        companyId: formData.companyId,
+        visitDate: formData.visitDate,
+        application_end_date: formData.applicationDeadline, // Map to correct field name
+        jobPositions: formData.jobPositions,
+        salaryPackage: formData.salaryPackage,
+        eligibilityCriteria: formData.eligibilityCriteria,
         batchYear: Number(formData.batchYear)
-      });
+      };
+      
+      await adminAPI.updateVisit(visitId, payload);
       toast.success('Visit updated successfully');
       navigate('/admin/visits');
     } catch (error) {
       console.error('Error updating visit:', error);
+      console.error('Server response:', error.response?.data);
       toast.error(error.response?.data?.message || 'Failed to update visit');
     }
   };

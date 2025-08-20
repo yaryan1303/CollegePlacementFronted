@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { adminAPI } from '../../services/api';
+import React, { useState, useEffect } from "react";
+import { adminAPI } from "../../services/api";
 import {
   AcademicCapIcon,
   PencilSquareIcon,
@@ -8,17 +8,18 @@ import {
   CheckIcon,
   XMarkIcon,
   ArrowPathIcon,
-  MagnifyingGlassIcon
-} from '@heroicons/react/24/outline';
-import { toast } from 'react-toastify';
+  MagnifyingGlassIcon,
+} from "@heroicons/react/24/outline";
+import { toast } from "react-toastify";
 
 const DepartmentManagement = () => {
   const [departments, setDepartments] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [formData, setFormData] = useState({ name: '' });
+  const [formData, setFormData] = useState({ name: "" });
   const [editMode, setEditMode] = useState(false);
   const [currentDepartmentId, setCurrentDepartmentId] = useState(null);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState("");
+  const [error, setError] = useState("");
 
   useEffect(() => {
     fetchDepartments();
@@ -30,8 +31,8 @@ const DepartmentManagement = () => {
       const response = await adminAPI.getAllDepartments();
       setDepartments(response.data);
     } catch (error) {
-      console.error('Error fetching departments:', error);
-      toast.error('Failed to load departments');
+      console.error("Error fetching departments:", error);
+      toast.error("Failed to load departments");
     } finally {
       setLoading(false);
     }
@@ -42,20 +43,27 @@ const DepartmentManagement = () => {
   };
 
   const handleSubmit = async (e) => {
+    setError("");
     e.preventDefault();
     try {
       if (editMode) {
         await adminAPI.updateDepartment(currentDepartmentId, formData);
-        toast.success('Department updated successfully');
+        toast.success("Department updated successfully");
       } else {
         await adminAPI.createDepartment(formData);
-        toast.success('Department created successfully');
+        toast.success("Department created successfully");
       }
       resetForm();
       fetchDepartments();
     } catch (error) {
-      console.error('Error saving department:', error);
-      toast.error(error.response?.data?.message || 'Failed to save department');
+      const errorMessage =
+        error.message || // This is where your error is (Username already taken)
+        error.response?.data?.message ||
+        error.response?.data?.error ||
+        "Registration failed. Please try again.";
+      setError(errorMessage);
+      console.error("Error saving department:", error);
+      toast.error(error.response?.data?.message || "Failed to save department");
     }
   };
 
@@ -65,26 +73,26 @@ const DepartmentManagement = () => {
     setCurrentDepartmentId(department.id);
   };
 
-//   const handleDelete = async (id) => {
-//     if (window.confirm('Are you sure you want to delete this department?')) {
-//       try {
-//         await adminAPI.deleteDepartment(id);
-//         toast.success('Department deleted successfully');
-//         fetchDepartments();
-//       } catch (error) {
-//         console.error('Error deleting department:', error);
-//         toast.error('Failed to delete department');
-//       }
-//     }
-//   };
+  //   const handleDelete = async (id) => {
+  //     if (window.confirm('Are you sure you want to delete this department?')) {
+  //       try {
+  //         await adminAPI.deleteDepartment(id);
+  //         toast.success('Department deleted successfully');
+  //         fetchDepartments();
+  //       } catch (error) {
+  //         console.error('Error deleting department:', error);
+  //         toast.error('Failed to delete department');
+  //       }
+  //     }
+  //   };
 
   const resetForm = () => {
-    setFormData({ name: '' });
+    setFormData({ name: "" });
     setEditMode(false);
     setCurrentDepartmentId(null);
   };
 
-  const filteredDepartments = departments.filter(dept =>
+  const filteredDepartments = departments.filter((dept) =>
     dept.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
@@ -102,7 +110,9 @@ const DepartmentManagement = () => {
         {/* Header */}
         <div className="flex justify-between items-center mb-8">
           <div>
-            <h1 className="text-3xl font-bold text-gray-800">Department Management</h1>
+            <h1 className="text-3xl font-bold text-gray-800">
+              Department Management
+            </h1>
             <p className="text-gray-600 mt-1">Manage academic departments</p>
           </div>
           <button
@@ -114,14 +124,23 @@ const DepartmentManagement = () => {
           </button>
         </div>
 
+        {error && (
+          <div className="mb-6 bg-red-50 border-l-4 border-red-500 text-red-700 p-4 rounded-lg">
+            <p>{error}</p>
+          </div>
+        )}
+
         {/* Department Form */}
         <div className="bg-white rounded-xl shadow-md border border-gray-200 p-6 mb-8">
           <h2 className="text-xl font-semibold text-gray-800 mb-4">
-            {editMode ? 'Edit Department' : 'Create New Department'}
+            {editMode ? "Edit Department" : "Create New Department"}
           </h2>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
+              <label
+                htmlFor="name"
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
                 Department Name *
               </label>
               <input
@@ -208,7 +227,9 @@ const DepartmentManagement = () => {
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center">
                           <AcademicCapIcon className="h-5 w-5 text-blue-500 mr-2" />
-                          <span className="text-sm font-medium text-gray-900">{department.name}</span>
+                          <span className="text-sm font-medium text-gray-900">
+                            {department.name}
+                          </span>
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
@@ -232,9 +253,13 @@ const DepartmentManagement = () => {
                     <td colSpan="3" className="px-6 py-4 text-center">
                       <div className="text-center py-12">
                         <AcademicCapIcon className="mx-auto h-12 w-12 text-gray-400" />
-                        <h3 className="mt-2 text-sm font-medium text-gray-900">No departments found</h3>
+                        <h3 className="mt-2 text-sm font-medium text-gray-900">
+                          No departments found
+                        </h3>
                         <p className="mt-1 text-sm text-gray-500">
-                          {searchQuery ? 'Try a different search' : 'Create your first department'}
+                          {searchQuery
+                            ? "Try a different search"
+                            : "Create your first department"}
                         </p>
                       </div>
                     </td>

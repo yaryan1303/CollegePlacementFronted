@@ -133,12 +133,12 @@ const CompanyVisitsList = () => {
                     >
                       <EditIcon className="h-4 w-4" />
                     </Link>
-                    <button
+                    {/* <button
                       onClick={() => handleDelete(visit.visitId)}
                       className="text-red-600 hover:text-red-900 p-1 rounded-full hover:bg-red-50"
                     >
                       <TrashIcon className="h-4 w-4" />
-                    </button>
+                    </button> */}
                   </td>
                 </tr>
               ))}
