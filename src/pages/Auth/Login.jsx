@@ -39,6 +39,9 @@ const Login = () => {
       // interceptor turns it into error.message = "Bad credentials"
       setError(error.message || "Login failed. Please try again.");
     }
+    finally {
+      setLoading(false);
+    }
   };
 
   return (
