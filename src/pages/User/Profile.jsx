@@ -11,6 +11,9 @@ import {
   CalendarIcon,
   BookOpenIcon,
   AwardIcon,
+  InfoIcon,
+  TrophyIcon,
+  BuildingIcon,
 } from "lucide-react";
 import { toast } from "react-toastify";
 
@@ -30,13 +33,14 @@ const Profile = () => {
   });
   const [loading, setLoading] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
-  const [profileExists, setProfileExists] = useState(false); // NEW state to track existence
+  const [profileExists, setProfileExists] = useState(false);
   const [error, setError] = useState("");
 
   useEffect(() => {
     if (user?.userId) {
-      fetchDepartments();
-      fetchStudentData();
+      fetchDepartments().then(() => {
+        fetchStudentData();
+      });
     }
   }, [user?.userId]);
 
@@ -45,35 +49,46 @@ const Profile = () => {
       const response = await userAPI.getAllDepartments();
       console.log("Departments:", response.data);
       setDepartments(response.data);
+      return response.data;
     } catch (error) {
       console.error("Error fetching departments:", error);
       toast.error("Failed to load departments");
+      return [];
     }
   };
 
   const fetchStudentData = async () => {
     try {
       const response = await userAPI.getStudentDetails(user.userId);
+      console.log("Student data response:", response.data);
+      
       if (response.data) {
+        // Find the department ID that matches the department name from student data
+        const department = departments.find(dept => 
+          dept.name === response.data.department
+        );
+        
+        console.log("Matching department:", department);
+        
         setFormData({
           firstName: response.data.firstName || "",
           lastName: response.data.lastName || "",
           rollNumber: response.data.rollNumber || "",
           batchYear: response.data.batchYear?.toString() || "",
-          departmentId: response.data.departmentId?.toString() || "",
+          departmentId: department ? department.id.toString() : "",
           cgpa: response.data.cgpa?.toString() || "",
           resumeUrl: response.data.resumeUrl || "",
           phoneNumber: response.data.phoneNumber || "",
           currentStatus: response.data.currentStatus || "NOT_PLACED",
         });
-        setProfileExists(true); // Mark that profile exists
+        setProfileExists(true);
         setIsEditing(false);
       } else {
         setProfileExists(false);
       }
     } catch (error) {
       setError(error.message || "Login failed. Please try again.");
-      setProfileExists(false); // No profile found
+      setProfileExists(false);
     }
   };
 
@@ -88,62 +103,14 @@ const Profile = () => {
   const handleEditToggle = () => {
     setIsEditing(!isEditing);
     if (isEditing) {
-      fetchStudentData(); // Reset form if canceling edit
+      fetchStudentData();
     }
   };
-
-  // const handleSubmit = async (e) => {
-  //   e.preventDefault();
-  //   setLoading(true);
-
-  //   try {
-  //     const dataToSubmit = {
-  //       firstName: formData.firstName,
-  //       lastName: formData.lastName,
-  //       rollNumber: formData.rollNumber,
-  //       batchYear: parseInt(formData.batchYear),
-  //       departmentId: parseInt(formData.departmentId),
-  //       cgpa: parseFloat(formData.cgpa),
-  //       resumeUrl: formData.resumeUrl,
-  //       phoneNumber: formData.phoneNumber,
-  //       currentStatus: formData.currentStatus
-  //     };
-
-  //     if (profileExists) {
-  //       // Update existing profile
-  //       await userAPI.updateStudentDetails(user.userId, dataToSubmit);
-  //       toast.success('Profile updated successfully!');
-  //     } else {
-  //       // Create new profile
-  //       console.log('Creating new profile:', dataToSubmit);
-  //       await userAPI.saveStudentDetails(dataToSubmit);
-  //       toast.success('Profile saved successfully!');
-  //       setProfileExists(true);
-  //     }
-
-  //     await fetchStudentData();
-  //   } catch (error) {
-  //     const errorMessage =
-  //       error.message ||
-  //       error.response?.data?.message ||
-  //       error.response?.data?.error ||
-  //       "Not able to update details...Please try again";
-  //     setError(errorMessage);
-  //     console.error('Error saving profile:', error);
-  //     toast.error(
-  //       error.response?.data?.message ||
-  //       error.response?.data?.error ||
-  //       'Failed to save profile'
-  //     );
-  //   } finally {
-  //     setLoading(false);
-  //   }
-  // };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    setError(""); // Clear previous errors
+    setError("");
 
     try {
       const dataToSubmit = {
@@ -159,33 +126,37 @@ const Profile = () => {
       };
 
       if (profileExists) {
-        // Update existing profile
         await userAPI.updateStudentDetails(user.userId, dataToSubmit);
         toast.success("Profile updated successfully!");
       } else {
-        // Create new profile
         await userAPI.saveStudentDetails(dataToSubmit);
         toast.success("Profile saved successfully!");
         setProfileExists(true);
       }
 
       await fetchStudentData();
-      setIsEditing(false); // Exit edit mode after successful save
+      setIsEditing(false);
     } catch (error) {
-      // console.error("Error saving profile:", error);
-
-      // Extract error message from different possible locations
       const errorMessage =
-        error.message || // Direct error message (e.g., "Roll Number already exists")
+        error.message ||
         error.response?.data?.message ||
         error.response?.data?.error ||
         "Failed to save profile. Please try again.";
 
       setError(errorMessage);
-      toast.error(errorMessage); // Show error in toast
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
+  };
+
+  // Get current department name for display
+  const getCurrentDepartmentName = () => {
+    if (!formData.departmentId) return "";
+    const department = departments.find(dept => 
+      dept.id.toString() === formData.departmentId.toString()
+    );
+    return department ? department.name : "";
   };
 
   return (
@@ -222,6 +193,7 @@ const Profile = () => {
                 <p>{error}</p>
               </div>
             )}
+            
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-6">
                 <h2 className="text-lg font-semibold text-gray-900 border-b border-gray-200 pb-2">
@@ -365,9 +337,7 @@ const Profile = () => {
                       value={formData.departmentId}
                       onChange={handleChange}
                     >
-                      <option value={formData.departmentId}>
-                        Select Department
-                      </option>
+                      <option value="">Select Department</option>
                       {departments.map((dept) => (
                         <option key={dept.id} value={dept.id}>
                           {dept.name}
@@ -376,6 +346,11 @@ const Profile = () => {
                     </select>
                     <ChevronDownIcon className="absolute right-3 top-3 h-5 w-5 text-gray-400 pointer-events-none" />
                   </div>
+                  {!isEditing && formData.departmentId && (
+                    <p className="mt-1 text-sm text-gray-600">
+                      Current: {getCurrentDepartmentName()}
+                    </p>
+                  )}
                 </div>
 
                 <div className="relative">
@@ -412,22 +387,65 @@ const Profile = () => {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="relative">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
                     Current Status
                   </label>
-                  <select
-                    name="currentStatus"
-                    disabled={!isEditing}
-                    className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 ${
-                      isEditing
-                        ? "border-gray-300"
-                        : "border-transparent bg-gray-50"
+                  <div
+                    className={`w-full p-4 rounded-xl border ${
+                      formData.currentStatus === "PLACED"
+                        ? "bg-gradient-to-r from-green-50 to-emerald-50 border-green-200"
+                        : formData.currentStatus === "INTERN"
+                        ? "bg-gradient-to-r from-blue-50 to-cyan-50 border-blue-200"
+                        : "bg-gradient-to-r from-gray-50 to-slate-50 border-gray-200"
                     }`}
-                    value={formData.currentStatus}
-                    onChange={handleChange}
                   >
-                    <option value="NOT_PLACED">Not Placed</option>
-                  </select>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-3">
+                        <div
+                          className={`p-2 rounded-lg ${
+                            formData.currentStatus === "PLACED"
+                              ? "bg-green-500/10 text-green-600"
+                              : formData.currentStatus === "INTERN"
+                              ? "bg-blue-500/10 text-blue-600"
+                              : "bg-gray-500/10 text-gray-600"
+                          }`}
+                        >
+                          {formData.currentStatus === "PLACED" ? (
+                            <TrophyIcon className="h-6 w-6" />
+                          ) : formData.currentStatus === "INTERN" ? (
+                            <BuildingIcon className="h-6 w-6" />
+                          ) : (
+                            <UserIcon className="h-6 w-6" />
+                          )}
+                        </div>
+                        <div>
+                          <h3 className="text-lg font-bold text-gray-900">
+                            {formData.currentStatus
+                              ?.toLowerCase()
+                              .replace(/_/g, " ")
+                              .replace(/\b\w/g, (l) => l.toUpperCase()) ||
+                              "Not Placed"}
+                          </h3>
+                          <p className="text-sm text-gray-600 mt-1">
+                            Last updated: {new Date().toLocaleDateString()}
+                          </p>
+                        </div>
+                      </div>
+                      <div
+                        className={`animate-pulse w-2 h-2 rounded-full ${
+                          formData.currentStatus === "PLACED"
+                            ? "bg-green-500"
+                            : formData.currentStatus === "INTERN"
+                            ? "bg-blue-500"
+                            : "bg-gray-500"
+                        }`}
+                      />
+                    </div>
+                  </div>
+                  <p className="mt-2 text-xs text-gray-500 flex items-center">
+                    <InfoIcon className="h-3 w-3 mr-1" />
+                    Status reflects your current placement situation
+                  </p>
                 </div>
 
                 <div className="relative">
