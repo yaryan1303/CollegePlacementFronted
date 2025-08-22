@@ -47,7 +47,7 @@ function App() {
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
-            <Route path="/api/auth/public/reset-password" element={<ResetPassword />} />
+           <Route path="/reset-password" element={<ResetPassword />} />
             {/* <Route path="/reset-password" element={<ResetPassword />} /> */}
 
              <Route path="/resumesanalysis" element={<OpportunityApplication/>} />
