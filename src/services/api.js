@@ -142,6 +142,7 @@ export const adminAPI = {
   getAllDepartments: () => api.get("/admin/departments"),
   getBranchYearWisePlacements: () => api.get("/admin/branch-year-wise"),
   getYearWisePlacementCount: () => api.get("/admin/count-by-batch-year"),
+  searchPlacementRecordsByName: (name) => api.get(`/admin/search?name=${name}`),
 };
 
 /* ---------------- USER API ---------------- */

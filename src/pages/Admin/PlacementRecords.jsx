@@ -1,18 +1,22 @@
 import React, { useState, useEffect } from 'react';
-import { Table, Select, Input, Card, Space, Typography, Spin, Tabs } from 'antd';
+import { Table, Select, Input, Card, Space, Typography, Spin, Tabs, Button } from 'antd';
 import { SearchOutlined } from '@ant-design/icons';
 import { adminAPI, userAPI } from '../../services/api';
 
 const { Title } = Typography;
 const { Option } = Select;
 const { TabPane } = Tabs;
+const { Search } = Input;
 
 const PlacementRecords = () => {
   const [allRecords, setAllRecords] = useState([]);
   const [filteredRecords, setFilteredRecords] = useState([]);
+  const [searchedRecords, setSearchedRecords] = useState([]);
   const [companies, setCompanies] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [searchLoading, setSearchLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('all');
+  const [searchName, setSearchName] = useState('');
   const [filters, setFilters] = useState({
     companyName: undefined,
     batchYear: undefined
@@ -46,7 +50,6 @@ const PlacementRecords = () => {
       setLoading(true);
       const response = await adminAPI.getAllPlacementRecordsAdmin();
       setAllRecords(response.data);
-      console.log(response.data);
     } catch (error) {
       console.error('Error fetching all records:', error);
     } finally {
@@ -69,6 +72,24 @@ const PlacementRecords = () => {
     }
   };
 
+  const searchByName = async () => {
+    if (!searchName.trim()) {
+      setSearchedRecords([]);
+      return;
+    }
+
+    try {
+      setSearchLoading(true);
+      const response = await adminAPI.searchPlacementRecordsByName(searchName);
+      setSearchedRecords(response.data);
+    } catch (error) {
+      console.error('Error searching by name:', error);
+      setSearchedRecords([]);
+    } finally {
+      setSearchLoading(false);
+    }
+  };
+
   const handleCompanyChange = (value) => {
     setFilters({ ...filters, companyName: value });
   };
@@ -78,8 +99,27 @@ const PlacementRecords = () => {
     setFilters({ ...filters, batchYear: value ? parseInt(value) : undefined });
   };
 
+  const handleSearchChange = (e) => {
+    setSearchName(e.target.value);
+  };
+
   const handleTabChange = (key) => {
     setActiveTab(key);
+    // Clear search results when switching away from search tab
+    if (key !== 'search') {
+      setSearchName('');
+      setSearchedRecords([]);
+    }
+  };
+
+  const handleSearchSubmit = () => {
+    searchByName();
+  };
+
+  const handleKeyPress = (e) => {
+    if (e.key === 'Enter') {
+      searchByName();
+    }
   };
 
   const columns = [
@@ -136,6 +176,7 @@ const PlacementRecords = () => {
         <Title level={3} style={{ marginBottom: '24px' }}>Placement Records</Title>
         
         <Tabs defaultActiveKey="all" onChange={handleTabChange}>
+          {/* All Placements Tab */}
           <TabPane tab="All Placements" key="all">
             <Spin spinning={loading}>
               <Table
@@ -153,6 +194,7 @@ const PlacementRecords = () => {
             </Spin>
           </TabPane>
           
+          {/* Filter Placements Tab */}
           <TabPane tab="Filter Placements" key="filtered">
             <Space size="large" style={{ marginBottom: '24px', width: '100%' }}>
               <div style={{ width: '300px' }}>
@@ -172,15 +214,8 @@ const PlacementRecords = () => {
                       {company.name}
                     </Option>
                   ))}
-
-
-                  
                 </Select>
               </div>
-
-              
-              
-             
             </Space>
 
             <Spin spinning={loading}>
@@ -194,6 +229,58 @@ const PlacementRecords = () => {
                   pageSize: 10,
                   showSizeChanger: true,
                   pageSizeOptions: ['10', '20', '50', '100'],
+                }}
+              />
+            </Spin>
+          </TabPane>
+
+          {/* Search by Name Tab */}
+          <TabPane tab="Search by Name" key="search">
+            <Space size="large" style={{ marginBottom: '24px', width: '100%' }}>
+              <Search
+                placeholder="Enter student name to search"
+                enterButton={<SearchOutlined />}
+                size="large"
+                value={searchName}
+                onChange={handleSearchChange}
+                onSearch={handleSearchSubmit}
+                onKeyPress={handleKeyPress}
+                style={{ width: 400 }}
+                loading={searchLoading}
+              />
+              <Button 
+                onClick={() => {
+                  setSearchName('');
+                  setSearchedRecords([]);
+                }}
+                disabled={!searchName && searchedRecords.length === 0}
+              >
+                Clear
+              </Button>
+            </Space>
+
+            {searchName && searchedRecords.length === 0 && !searchLoading && (
+              <div style={{ textAlign: 'center', padding: '20px', color: '#999' }}>
+                No placement records found for "{searchName}"
+              </div>
+            )}
+
+            <Spin spinning={searchLoading}>
+              <Table
+                columns={columns}
+                dataSource={searchedRecords}
+                rowKey="recordId"
+                bordered
+                size="middle"
+                pagination={{
+                  pageSize: 10,
+                  showSizeChanger: true,
+                  pageSizeOptions: ['10', '20', '50', '100'],
+                }}
+                locale={{
+                  emptyText: searchName ? 
+                    `No results found for "${searchName}"` : 
+                    'Enter a student name to search'
                 }}
               />
             </Spin>
